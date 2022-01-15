@@ -10,10 +10,10 @@ To exewcute navigate to the target directory created by the build process and ru
 
 java -jar CollectionLoader.jar -?
 
-Usage: java -jar TableLoader.jar [options]
--n  <number>            Number of customers
--m  <number>            Maximum number of orders per customer
--i  <number>            Maximum number of items per order
--p  <number>            Number of products
--l                      Skip table loading
--u <string>             MongoDB URI
+Usage: java -jar TableLoader.jar [options]<br/>
+-n  <number>            Number of customers<br/>
+-m  <number>            Maximum number of orders per customer<br/>
+-i  <number>            Maximum number of items per order<br/>
+-p  <number>            Number of products<br/>
+-l                      Skip table loading<br/>
+-u  <string>            MongoDB URI<br/>
