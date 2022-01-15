@@ -6,14 +6,14 @@ To build install Maven, open a shell, navigate to the root of the project and ru
 
 mvn clean package shade:shade
 
-To exewcute navigate to the target directory created by the build process and run the following command:
+To execute navigate to the target directory created by the build process and run the following command:
 
 java -jar CollectionLoader.jar -?
 
-Usage: java -jar TableLoader.jar [options]
--n  <number>            Number of customers
--m  <number>            Maximum number of orders per customer
--i  <number>            Maximum number of items per order
--p  <number>            Number of products
--l                      Skip table loading
--u <string>             MongoDB URI
+Usage: java -jar TableLoader.jar [options]<br/>
+&ensp;-n&ensp;<number>&emsp;&emsp;Number of customers<br/>
+&ensp;-m&ensp;<number>&emsp;&emsp;Maximum number of orders per customer<br/>
+&ensp;-i&ensp;<number>&emsp;&emsp;Maximum number of items per order<br/>
+&ensp;-p&ensp;<number>&emsp;&emsp;Number of products<br/>
+&ensp;-l&ensp;&emsp;&emsp;&emsp;&emsp;Skip table loading<br/>
+&ensp;-u&ensp;<string>&emsp;&emsp; MongoDB URI<br/>
