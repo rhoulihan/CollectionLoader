@@ -32,6 +32,7 @@
 	</dependencies>
 	<build>
 		<sourceDirectory>src</sourceDirectory>
+        <finalName>CollectionLoader</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
