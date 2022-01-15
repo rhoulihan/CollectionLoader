@@ -9,8 +9,6 @@ public class MongoReader implements Runnable {
 	private String orderId;
 	private MongoCollection<Document> coll;
 
-	/* Simulates N devices inserting X Documents */
-
 	public MongoReader(MongoCollection<Document> coll, String orderId) {
 		this.coll = coll;
 		this.orderId = orderId;
