@@ -6,7 +6,7 @@ To build install Maven, open a shell, navigate to the root of the project and ru
 
 mvn clean package shade:shade
 
-To exewcute navigate to the target directory created by the build process and run the following command:
+To execute navigate to the target directory created by the build process and run the following command:
 
 java -jar CollectionLoader.jar -?
 
