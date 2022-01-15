@@ -11,9 +11,9 @@ To exewcute navigate to the target directory created by the build process and ru
 java -jar CollectionLoader.jar -?
 
 Usage: java -jar TableLoader.jar [options]<br/>
--n  <number>            Number of customers<br/>
--m  <number>            Maximum number of orders per customer<br/>
--i  <number>            Maximum number of items per order<br/>
--p  <number>            Number of products<br/>
--l                      Skip table loading<br/>
--u  <string>            MongoDB URI<br/>
+&ensp;-n&ensp;<number>&emsp;&emsp;Number of customers<br/>
+&ensp;-m&ensp;<number>&emsp;&emsp;Maximum number of orders per customer<br/>
+&ensp;-i&ensp;<number>&emsp;&emsp;Maximum number of items per order<br/>
+&ensp;-p&ensp;<number>&emsp;&emsp;Number of products<br/>
+&ensp;-l&ensp;&emsp;&emsp;&emsp;&emsp;Skip table loading<br/>
+&ensp;-u&ensp;<string>&emsp;&emsp; MongoDB URI<br/>
