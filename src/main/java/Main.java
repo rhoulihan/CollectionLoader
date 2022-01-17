@@ -301,7 +301,8 @@ public class Main {
 						documents.add(new Document().append("_id", pk + "#" + count)
 								.append("productId", pDoc.getString("_id")).append("type", "orderItem")
 								.append("date", timestamp).append("custId", custId).append("qty", qty)
-								.append("price", pDoc.getInteger("price")).append("detail", pDoc.get("detail")));
+								.append("price", pDoc.getInteger("price")).append("detail", pDoc.get("detail"))
+								.append("data", new String(new byte[random.nextInt(6400)], Charset.forName("UTF-8"))));
 
 						ret += qty * pDoc.getInteger("price");
 					}
@@ -392,7 +393,7 @@ public class Main {
 					tpe.execute(new MongoWriter(numThreads.incrementAndGet(), mdb.getCollection(name), docs.get(name)));
 				}
 			}
-			
+
 			try {
 				synchronized (numThreads) {
 					numThreads.wait();
@@ -447,10 +448,6 @@ public class Main {
 				counts.put("items", Integer.valueOf(argVals.get(key)));
 				break;
 
-			case "-l":
-				loadItems = false;
-				break;
-
 			case "-m":
 				counts.put("orders", Integer.valueOf(argVals.get(key)));
 				break;
@@ -471,13 +468,12 @@ public class Main {
 	}
 
 	private static void usage(String message) {
-		System.err.println(message);
+		logger.error(message);
 		System.out.println("Usage: java -jar TableLoader.jar [options]");
 		System.out.println("-n  <number>\t\tNumber of customers");
 		System.out.println("-m  <number>\t\tMaximum number of orders per customer");
 		System.out.println("-i  <number>\t\tMaximum number of items per order");
 		System.out.println("-p  <number>\t\tNumber of products");
-		System.out.println("-l  \t\t\tSkip table loading");
 		System.out.println("-u <string> \t\tMongoDB URI");
 		System.exit(1);
 	}
