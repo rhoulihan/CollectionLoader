@@ -136,11 +136,11 @@ public class Main {
 		// Prewarm thread pool
 		System.out.println("Prewarming thread pool...");
 		tpe.prestartAllCoreThreads();
+		getAllOrdersById("multi");
 
 		// Start the test
 		long sTime = 0L, mTime = 0L, eTime = 0L, single, multi, embed;
 
-		getAllOrdersById(false);
 		for (int i = 0; i < 10; i++) {
 			System.out.println(String.format("\nIteration %d:", i));
 
@@ -201,15 +201,13 @@ public class Main {
 
 		switch (collection) {
 		case "data":
-			getAllOrdersById(true);
-			break;
-
 		case "embedded":
-			getAllOrdersByIdEmbedded();
+			getAllOrdersById(collection);
 			break;
 
 		case "multi":
-			getAllOrdersById(false);
+			for (String name : docs.keySet())
+				getAllOrdersById(name);
 			break;
 		}
 
@@ -226,37 +224,13 @@ public class Main {
 		return elapsed;
 	}
 
-	private static void getAllOrdersByIdEmbedded() {
+	private static void getAllOrdersById(String collection) {
 		for (String orderId : orderIds) {
 			synchronized (Main.numThreads) {
 				numThreads.incrementAndGet();
 			}
-			tpe.execute(new MongoReader(mdb.getCollection("embedded"), orderId));
+			tpe.execute(new MongoReader(mdb.getCollection(collection), orderId));
 			count++;
-		}
-	}
-
-	private static void getAllOrdersById(boolean singleTable) {
-		if (mongodb) {
-			for (String orderId : orderIds) {
-				if (singleTable) {
-					synchronized (Main.numThreads) {
-						numThreads.incrementAndGet();
-					}
-					tpe.execute(new MongoReader(mdb.getCollection("data"), orderId));
-					count++;
-				} else {
-					for (String name : docs.keySet())
-						if (!name.equals("customer") && !name.equals("warehouse")) {
-							synchronized (Main.numThreads) {
-								numThreads.incrementAndGet();
-							}
-							tpe.execute(new MongoReader(mdb.getCollection(name), orderId));
-						}
-
-					count++;
-				}
-			}
 		}
 	}
 
