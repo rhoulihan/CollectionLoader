@@ -47,13 +47,17 @@ public class Main {
 	private static Map<String, MongoCollection<Document>> collections = new HashMap<String, MongoCollection<Document>>();
 	private static com.mongodb.client.MongoClient mClient;
 	static Logger logger;
-	private static List<Document> documents = new ArrayList<Document>();
+	private static List<Document> documents = new ArrayList<Document>(), embedded = new ArrayList<Document>();
 	private static List<Document> products = new ArrayList<Document>();
 	private static List<String> orderIds = new ArrayList<String>();
 	private static String orderId;
 	private static MongoDatabase mdb;
 	private static String mongoUri;
-	private static HashMap<String, List<Document>> docs;
+	private static Map<String, List<Document>> docs;
+
+	private static Document order;
+
+	private static List<Document> items = new ArrayList<Document>();
 
 	// main function
 	public static void main(String[] args) {
@@ -75,6 +79,7 @@ public class Main {
 			mdb = mClient.getDatabase("perftest");
 
 			mdb.getCollection("data").drop();
+			mdb.getCollection("embedded").drop();
 			mdb.getCollection("customer").drop();
 			mdb.getCollection("order").drop();
 			mdb.getCollection("orderItem").drop();
@@ -84,6 +89,7 @@ public class Main {
 			mdb.getCollection("warehouse").drop();
 
 			mdb.createCollection("data");
+			mdb.createCollection("embedded");
 			mdb.createCollection("customer");
 			mdb.createCollection("order");
 			mdb.createCollection("orderItem");
@@ -93,6 +99,7 @@ public class Main {
 			mdb.createCollection("warehouse");
 
 			collections.put("data", mdb.getCollection("data"));
+			collections.put("embedded", mdb.getCollection("embedded"));
 			collections.put("customer", mdb.getCollection("customer"));
 			collections.put("order", mdb.getCollection("order"));
 			collections.put("orderItem", mdb.getCollection("orderItem"));
@@ -131,46 +138,46 @@ public class Main {
 		tpe.prestartAllCoreThreads();
 
 		// Start the test
-		long sTime = 0L, mTime = 0L;
+		long sTime = 0L, mTime = 0L, eTime = 0L, single, multi, embed;
 
 		getAllOrdersById(false);
 		for (int i = 0; i < 10; i++) {
 			System.out.println(String.format("\nIteration %d:", i));
 
-			// Run Multi-table and record execution time
-			count = 0;
-			System.out.print(String.format("Running getOrderById test for Multiple %s data model...",
-					mongodb ? "Collection" : "Table"));
-			elapsed = System.currentTimeMillis();
-			getAllOrdersById(false);
+			// Run getOrderById test and record execution times for each model
+			synchronized (numThreads) {
+				// Multiple Collection
+				multi = runGetAllOrdersByIdTest("multi");
 
-			long multiTable = System.currentTimeMillis() - elapsed;
-			System.out.println(String.format("\nRetrieved %d order objects in %dms,", count, multiTable));
+				// Single Collection
+				single = runGetAllOrdersByIdTest("data");
 
-			count = 0;
-			System.out.print(String.format("Running getOrderById test for Single %s data model...",
-					mongodb ? "Collection" : "Table"));
-			elapsed = System.currentTimeMillis();
-			getAllOrdersById(true);
-			long singleTable = System.currentTimeMillis() - elapsed;
+				// Embedded Document
+				embed = runGetAllOrdersByIdTest("embedded");
+			}
 
-			System.out.println(String.format("\nRetrieved %d order objects in %dms,", count, singleTable));
+			// Report Single table efficiency as a percentage of Multi and Embedded model
+			// response times
+			System.out.println(
+					String.format("Single vs Multiple Collection efficiency: %d%s", (single * 100) / (multi), "%"));
+			System.out.println(
+					String.format("Single vs Embedded Document efficiency: %d%s", (single * 100) / (embed), "%"));
 
-			// Report Single table efficiency as a percentage of Multi-table response time
-			System.out.println(String.format("Single %s efficiency: %d%s", mongodb ? "Collection" : "Table",
-					(singleTable * 100) / (multiTable), "%"));
-
-			mTime += multiTable;
-			sTime += singleTable;
+			mTime += multi;
+			sTime += single;
+			eTime += embed;
 		}
 
 		// Report average efficiency over N iterations
+		System.out.println();
+		System.out.println(String.format("Average Multiple Collection load time %dms", mTime / 10));
+		System.out.println(String.format("Average Single Collection load time %dms", sTime / 10));
+		System.out.println(String.format("Average Embedded Document load time %dms", eTime / 10));
+		System.out.println();
 		System.out.println(
-				String.format("Average Multi %s load time %dms,", mongodb ? "Collection" : "Table", mTime / 10));
+				String.format("Average Single vs. Multiple Collection efficiency: %d%%", (sTime * 100) / (mTime)));
 		System.out.println(
-				String.format("Average Single %s load time %dms,", mongodb ? "Collection" : "Table", sTime / 10));
-		System.out.println(String.format("Average Single %s efficiency: %d%%", mongodb ? "Collection" : "Table",
-				(sTime * 100) / (mTime)));
+				String.format("Average Single vs. Embedded Document efficiency: %d%%", (sTime * 100) / (eTime)));
 
 		// shutdown the thread pool and exit
 		System.out.println("Shutting down....");
@@ -183,6 +190,50 @@ public class Main {
 		}
 
 		System.out.println("Done.\n");
+	}
+
+	private static long runGetAllOrdersByIdTest(String collection) {
+		count = 0;
+		System.out.print(String.format("Running getOrderById test for %s data model...",
+				collection.equals("data") ? "Single Collection"
+						: collection.equals("multi") ? "Multiple Collection" : "Embedded Document"));
+		elapsed = System.currentTimeMillis();
+
+		switch (collection) {
+		case "data":
+			getAllOrdersById(true);
+			break;
+
+		case "embedded":
+			getAllOrdersByIdEmbedded();
+			break;
+
+		case "multi":
+			getAllOrdersById(false);
+			break;
+		}
+
+		elapsed = System.currentTimeMillis() - elapsed;
+		System.out.println(String.format("\nRetrieved %d order objects in %dms,", count, elapsed));
+
+		return elapsed;
+	}
+
+	private static void getAllOrdersByIdEmbedded() {
+		for (String orderId : orderIds) {
+			synchronized (Main.numThreads) {
+				numThreads.incrementAndGet();
+			}
+			tpe.execute(new MongoReader(mdb.getCollection("embedded"), orderId));
+			count++;
+		}
+
+		try {
+			synchronized (numThreads) {
+				numThreads.wait();
+			}
+		} catch (InterruptedException e) {
+		}
 	}
 
 	private static void getAllOrdersById(boolean singleTable) {
@@ -220,9 +271,6 @@ public class Main {
 		int ret = 0, count = 0;
 		elapsed = System.currentTimeMillis();
 
-		if (demo.equals("index-lag"))
-			System.out.print(String.format("Loading %s items...", type));
-
 		if (!demo.equals("cci")) {
 			String custId, timestamp;
 			int amount;
@@ -248,28 +296,33 @@ public class Main {
 
 				case "order":
 					pk = String.format("O#%d", counts.put("items", counts.get("items") + 1));
-					params.put("orderId", pk);
-
-					params.put("amount", Integer.toString(loadItems("orderItem",
-							random.nextInt((counts.get("orderitems") != null ? counts.get("orderitems") : 3)) + 1,
-							params)));
-
 					cal.add(Calendar.DAY_OF_YEAR, random.nextInt(30) * -1);
 					timestamp = sdf.format(cal.getTime());
-					custId = params.get("customerId");
-					amount = Integer.valueOf(params.get("amount"));
 
-					if (mongodb) {
-						documents.add(new Document().append("_id", pk + "#").append("custId", custId)
-								.append("type", "order").append("date", timestamp).append("amount", amount));
+					params.put("orderId", pk);
 
-						orderIds.add(pk + "#");
-					}
+					order = new Document().append("_id", pk + "#").append("custId", params.get("customerId"))
+							.append("type", "order").append("date", timestamp)
+							.append("items", new ArrayList<Document>());
+					items.clear();
+
+					params.put("amount",
+							Integer.toString(loadItems("orderItem", random.nextInt(counts.get("orderItems")) + 2, params)));
 
 					if (random.nextBoolean()) {
 						orderId = pk;
 						loadItems("invoice", 1, params);
 						loadItems("shipment", 1, params);
+					}
+
+					if (mongodb) {
+						documents.add(new Document().append("_id", pk + "#").append("custId", params.get("customerId"))
+								.append("type", "order").append("date", timestamp)
+								.append("amount", params.get("amount")));
+
+						embedded.add(order.append("amount", params.get("amount")).append("items", items));
+
+						orderIds.add(pk + "#");
 					}
 
 					cal = Calendar.getInstance();
@@ -284,9 +337,12 @@ public class Main {
 					amount = Integer.valueOf(params.get("amount"));
 
 					if (mongodb) {
-						documents.add(new Document().append("_id", pk + "#" + sk).append("invoiceId", sk)
+						Document invoice = new Document().append("_id", pk + "#" + sk).append("invoiceId", sk)
 								.append("type", "invoice").append("date", timestamp).append("amount", amount)
-								.append("custId", custId));
+								.append("custId", custId);
+
+						documents.add(invoice);
+						order.append("invoice", invoice);
 					}
 					break;
 
@@ -297,12 +353,15 @@ public class Main {
 					qty = random.nextInt(5);
 
 					if (mongodb) {
-						Document pDoc = products.get(random.nextInt(products.size()));
-						documents.add(new Document().append("_id", pk + "#" + count)
-								.append("productId", pDoc.getString("_id")).append("type", "orderItem")
-								.append("date", timestamp).append("custId", custId).append("qty", qty)
-								.append("price", pDoc.getInteger("price")).append("detail", pDoc.get("detail"))
-								.append("data", new String(new byte[random.nextInt(6400)], Charset.forName("UTF-8"))));
+						Document pDoc = products.get(random.nextInt(products.size())), item = new Document()
+								.append("_id", pk + "#" + count).append("productId", pDoc.getString("_id"))
+								.append("type", "orderItem").append("date", timestamp).append("custId", custId)
+								.append("qty", qty).append("price", pDoc.getInteger("price"))
+								.append("detail", pDoc.get("detail"))
+								.append("data", new String(new byte[random.nextInt(6400)], Charset.forName("UTF-8")));
+
+						documents.add(item);
+						items.add(item);
 
 						ret += qty * pDoc.getInteger("price");
 					}
@@ -322,13 +381,16 @@ public class Main {
 					params.put("timestamp", timestamp);
 
 					if (mongodb) {
-						documents.add(new Document().append("_id", pk + "#" + sk).append("shipmentId", sk)
+						Document shipment = new Document().append("_id", pk + "#" + sk).append("shipmentId", sk)
 								.append("type", "shipment").append("date", timestamp)
 								.append("shipTo",
 										new Document().append("Country", "Sweden").append("County", "Vastra Gotaland")
 												.append("City", "Goteborg").append("Street", "Slanbarsvagen")
 												.append("Number", 34).append("ZipCode", 41787))
-								.append("method", method));
+								.append("method", method);
+
+						documents.add(shipment);
+						order.append("shipment", shipment);
 					}
 
 					// loadItems("shipItem", results.get(1).size(), params);
@@ -379,6 +441,7 @@ public class Main {
 		if (mongodb) {
 			synchronized (Main.numThreads) {
 				tpe.execute(new MongoWriter(numThreads.incrementAndGet(), mdb.getCollection("data"), documents));
+				tpe.execute(new MongoWriter(numThreads.incrementAndGet(), mdb.getCollection("embedded"), embedded));
 			}
 
 			docs = new HashMap<String, List<Document>>();
