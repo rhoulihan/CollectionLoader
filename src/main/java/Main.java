@@ -213,6 +213,13 @@ public class Main {
 			break;
 		}
 
+		try {
+			synchronized (numThreads) {
+				numThreads.wait();
+			}
+		} catch (InterruptedException e) {
+		}
+
 		elapsed = System.currentTimeMillis() - elapsed;
 		System.out.println(String.format("\nRetrieved %d order objects in %dms,", count, elapsed));
 
@@ -226,13 +233,6 @@ public class Main {
 			}
 			tpe.execute(new MongoReader(mdb.getCollection("embedded"), orderId));
 			count++;
-		}
-
-		try {
-			synchronized (numThreads) {
-				numThreads.wait();
-			}
-		} catch (InterruptedException e) {
 		}
 	}
 
@@ -257,13 +257,6 @@ public class Main {
 					count++;
 				}
 			}
-		}
-
-		try {
-			synchronized (numThreads) {
-				numThreads.wait();
-			}
-		} catch (InterruptedException e) {
 		}
 	}
 
