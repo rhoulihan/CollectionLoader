@@ -219,7 +219,7 @@ public class Main {
 		}
 
 		elapsed = System.currentTimeMillis() - elapsed;
-		System.out.println(String.format("\nRetrieved %d order objects in %dms,", count, elapsed));
+		System.out.println(String.format("\nRetrieved %d order objects in %dms,", orderIds.size(), elapsed));
 
 		return elapsed;
 	}
@@ -230,19 +230,18 @@ public class Main {
 				numThreads.incrementAndGet();
 			}
 			tpe.execute(new MongoReader(mdb.getCollection(collection), orderId));
-			count++;
 		}
 	}
 
 	private static int loadItems(String type, int qty, Map<String, String> params) {
-		int ret = 0, count = 0;
+		int ret = 0;
 		elapsed = System.currentTimeMillis();
 
 		if (!demo.equals("cci")) {
 			String custId, timestamp;
 			int amount;
 
-			for (count = 0; count < qty; count++) {
+			for (int itemCount = 0; itemCount < qty; itemCount++) {
 				String pk, sk;
 
 				switch (type) {
@@ -269,12 +268,12 @@ public class Main {
 					params.put("orderId", pk);
 
 					order = new Document().append("_id", pk + "#").append("custId", params.get("customerId"))
-							.append("type", "order").append("date", timestamp)
-							.append("items", new ArrayList<Document>());
-					items.clear();
+							.append("type", "order").append("date", timestamp);
+					
+					items = new ArrayList<Document>();
 
 					params.put("amount",
-							Integer.toString(loadItems("orderItem", random.nextInt(counts.get("orderItems")) + 2, params)));
+							Integer.toString(loadItems("orderItem", counts.get("orderItems"), params)));
 
 					if (random.nextBoolean()) {
 						orderId = pk;
@@ -317,11 +316,11 @@ public class Main {
 					pk = params.get("orderId");
 					timestamp = sdf.format(cal.getTime());
 					custId = params.get("customerId");
-					qty = random.nextInt(5);
+					int orderQty = random.nextInt(5);
 
 					if (mongodb) {
 						Document pDoc = products.get(random.nextInt(products.size())), item = new Document()
-								.append("_id", pk + "#" + count).append("productId", pDoc.getString("_id"))
+								.append("_id", pk + "#" + itemCount).append("productId", pDoc.getString("_id"))
 								.append("type", "orderItem").append("date", timestamp).append("custId", custId)
 								.append("qty", qty).append("price", pDoc.getInteger("price"))
 								.append("detail", pDoc.get("detail"))
@@ -330,7 +329,7 @@ public class Main {
 						documents.add(item);
 						items.add(item);
 
-						ret += qty * pDoc.getInteger("price");
+						ret += orderQty * pDoc.getInteger("price");
 					}
 					break;
 
