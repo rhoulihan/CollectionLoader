@@ -15,5 +15,5 @@ Usage: java -jar TableLoader.jar [options]<br/>
 &ensp;-m&ensp;<number>&emsp;&emsp;Maximum number of orders per customer<br/>
 &ensp;-i&ensp;<number>&emsp;&emsp;Maximum number of items per order<br/>
 &ensp;-p&ensp;<number>&emsp;&emsp;Number of products<br/>
-&ensp;-l&ensp;&emsp;&emsp;&emsp;&emsp;Skip table loading<br/>
+&ensp;-p&ensp;<number>&emsp;&emsp;Maximum size of each order item history in bytes<br/>
 &ensp;-u&ensp;<string>&emsp;&emsp; MongoDB URI<br/>
