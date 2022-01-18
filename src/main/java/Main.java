@@ -59,6 +59,8 @@ public class Main {
 
 	private static List<Document> items = new ArrayList<Document>();
 
+	private static int size = 6400;
+
 	// main function
 	public static void main(String[] args) {
 		LogManager.getLogManager().reset();
@@ -324,7 +326,7 @@ public class Main {
 								.append("type", "orderItem").append("date", timestamp).append("custId", custId)
 								.append("qty", qty).append("price", pDoc.getInteger("price"))
 								.append("detail", pDoc.get("detail"))
-								.append("data", new String(new byte[random.nextInt(6400)], Charset.forName("UTF-8")));
+								.append("data", new String(new byte[random.nextInt(size)], Charset.forName("UTF-8")));
 
 						documents.add(item);
 						items.add(item);
@@ -463,6 +465,10 @@ public class Main {
 
 		for (String key : argVals.keySet()) {
 			switch (key) {
+			case "-s":
+				size  = Integer.parseInt(argVals.get(key));
+				break;
+				
 			case "-u":
 				mongodb = true;
 				mongoUri = argVals.get(key);
@@ -501,8 +507,9 @@ public class Main {
 		System.out.println("Usage: java -jar TableLoader.jar [options]");
 		System.out.println("-n  <number>\t\tNumber of customers");
 		System.out.println("-m  <number>\t\tMaximum number of orders per customer");
-		System.out.println("-i  <number>\t\tMaximum number of items per order");
+		System.out.println("-i  <number>\t\tNumber of items per order");
 		System.out.println("-p  <number>\t\tNumber of products");
+		System.out.println("-s  <number>\t\tMaximum size of each order item history in bytes");
 		System.out.println("-u <string> \t\tMongoDB URI");
 		System.exit(1);
 	}
