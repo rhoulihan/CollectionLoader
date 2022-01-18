@@ -10,7 +10,7 @@ To execute navigate to the target directory created by the build process and run
 
 java -jar CollectionLoader.jar -?
 
-Usage: java -jar TableLoader.jar [options]<br/>
+Usage: java -jar CollectionLoader.jar [options]<br/>
 &ensp;-n&ensp;<number>&emsp;&emsp;Number of customers<br/>
 &ensp;-m&ensp;<number>&emsp;&emsp;Maximum number of orders per customer<br/>
 &ensp;-i&ensp;<number>&emsp;&emsp;Maximum number of items per order<br/>
